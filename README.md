@@ -21,22 +21,16 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 ### **1️⃣ Clone the Repository**  
 ```bash
 git clone https://github.com/yourusername/CamXploit.git
-cd CamXploit
 ```
-
-### **2️⃣ Install Dependencies**  
-CamXploit requires Python 3 and the `requests` module.  
+```
+cd CamXploit
+```  
 ```bash
 pip install -r requirements.txt
 ```
-
 ---
-
-## 📌 **Usage**  
-
-### **🔍 Basic Scan**  
-```bash
-python camxploit.py
+```
+python CamXploit.py
 ```
 Enter the **public IP address** of the target device when prompted.  
 
