@@ -1,5 +1,49 @@
 import requests
 import socket
+import sys
+
+import sys
+
+# Define ANSI color codes for terminal output
+if sys.stdout.isatty():
+    R = '\033[31m'  # Red
+    G = '\033[32m'  # Green
+    C = '\033[36m'  # Cyan
+    W = '\033[0m'  # Reset
+    Y = '\033[33m'  # Yellow
+    M = '\033[35m'  # Magenta
+    B = '\033[34m'  # Blue
+else:
+    R = G = C = W = Y = M = B = ''  # No color in non-TTY environments
+
+BANNER = rf"""
+{R}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣸⣏⠛⠻⠿⣿⣶⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣿⣿⣿⣷⣦⣤⣈⠙⠛⠿⣿⣷⣶⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣶⣦⣄⣈⠙⠻⠿⣿⣷⣶⣤⣀⡀⠀⠀⠀⠀⠀⠀
+⠀⠀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣦⣄⡉⠛⠻⢿⣿⣷⣶⣤⣀⠀⠀
+⠀⠀⠀⠉⠙⠛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣾⢻⣍⡉⠉⣿⠇⠀
+⠀⠀⠀⠀⠀⠀⠀⢹⡏⢹⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠇⣰⣿⣿⣾⠏⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠘⣿⠈⣿⠸⣯⠉⠛⠿⢿⣿⣿⣿⣿⡏⠀⠻⠿⣿⠇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢿⡆⢻⡄⣿⡀⠀⠀⠀⠈⠙⠛⠿⠿⠿⠿⠛⠋⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⠘⣇⢸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⣀⣀⣿⣴⣿⢾⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣴⡶⠾⠟⠛⠋⢹⡏⠀⢹⡇⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢠⣿⠀⠀⠀⠀⢀⣈⣿⣶⠿⠿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣴⠶⠞⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+  {G}[💀] CamXploit - Camera Exploitation & Exposure Scanner
+  {C}[🔍] Discover open CCTV cameras & security flaws
+  {Y}[⚠️] For educational & security research purposes only!{W}
+
+  {B}VERSION{W}  = 1.0.0
+  {B}Made By{W}  = Spyboy
+  {B}Twitter{W}  = https://spyboy.in/twitter
+  {B}Discord{W}  = https://spyboy.in/Discord
+  {B}Github{W}   = https://github.com/spyboy-productions/CamXploit
+"""
+
 
 # ========== COMMON CCTV PORTS & PATHS ==========
 COMMON_PORTS = [80, 443, 554, 8080, 8443]  # Standard IP Camera Ports
@@ -15,7 +59,7 @@ DEFAULT_CREDENTIALS = {
 
 # ========== PRINT SEARCH URLS ==========
 def print_search_urls(ip):
-    print("\n[🌍] Use these URLs to check the camera exposure manually:")
+    print(f"\n[🌍] {C}Use these URLs to check the camera exposure manually:{W}")
     print(f"  🔹 Shodan: https://www.shodan.io/search?query={ip}")
     print(f"  🔹 Censys: https://search.censys.io/hosts/{ip}")
     print(f"  🔹 Zoomeye: https://www.zoomeye.org/searchResult?q={ip}")
@@ -24,7 +68,7 @@ def print_search_urls(ip):
 
 # ========== GOOGLE DORKING SUGGESTIONS ==========
 def google_dork_search(ip):
-    print("\n[🔎] Google Dorking Suggestions:")
+    print(f"\n[🔎] {C}Google Dorking Suggestions:{W}")
     queries = [
         f"site:{ip} inurl:view/view.shtml",
         f"site:{ip} inurl:admin.html",
@@ -38,7 +82,7 @@ def google_dork_search(ip):
 
 # ========== CHECK PUBLIC IP INFORMATION ==========
 def check_ipinfo(ip):
-    print("\n[🌐] Checking Public IP Information (ipinfo.io):")
+    print(f"\n[🌐] {C}Checking Public IP Information (ipinfo.io):{W}")
     try:
         response = requests.get(f"https://ipinfo.io/{ip}/json")
         if response.status_code == 200:
@@ -56,7 +100,7 @@ def check_ipinfo(ip):
 
 # ========== PORT SCANNER ==========
 def check_ports(ip):
-    print("\n[🔍] Scanning common CCTV ports on IP:", ip)
+    print(f"\n[🔍] {C}Scanning common CCTV ports on IP:{W}", ip)
     open_ports = []
 
     for port in COMMON_PORTS:
@@ -77,7 +121,7 @@ def check_ports(ip):
 
 # ========== CHECK IF DEVICE IS A CAMERA ==========
 def check_if_camera(ip, open_ports):
-    print("\n[📷] Checking if the device is a CAMERA:")
+    print(f"\n[📷] {C}Checking if the device is a CAMERA:{W}")
 
     found_camera = False
     for port in open_ports:
@@ -106,7 +150,7 @@ def check_if_camera(ip, open_ports):
 
 # ========== CHECK FOR CAMERA LOGIN PAGE ==========
 def check_login_pages(ip, open_ports):
-    print("\n[🔍] Checking for Camera Login Pages:")
+    print(f"\n[🔍] {C}Checking for Camera Login Pages:{W}")
     possible_cameras = []
 
     for port in open_ports:
@@ -130,7 +174,7 @@ def check_login_pages(ip, open_ports):
 
 # ========== CHECK FOR CAMERA FIRMWARE & VULNERABILITIES ==========
 def check_camera_firmware(ip, open_ports):
-    print("\n[📡] Checking for Camera Type & Known Vulnerabilities:")
+    print(f"\n[📡] {C}Checking for Camera Type & Known Vulnerabilities:{W}")
 
     for port in open_ports:
         url = f"http://{ip}:{port}"
@@ -159,7 +203,7 @@ def check_camera_firmware(ip, open_ports):
 
 # ========== TRY DEFAULT CAMERA PASSWORDS ==========
 def test_default_passwords(ip, open_ports):
-    print("\n[🔑] Testing Default Camera Passwords:")
+    print(f"\n[🔑] {C}Testing Default Camera Passwords:{W}")
 
     for port in open_ports:
         url = f"http://{ip}:{port}/login"
@@ -181,7 +225,10 @@ def test_default_passwords(ip, open_ports):
 
 # ========== MAIN FUNCTION ==========
 def main():
-    target_ip = input("Enter Public IP of the Camera: ").strip()
+    target_ip = input(f"{G}[+] {C}Enter Potential Public IP of the Camera: {W}").strip()
+
+    print(BANNER)
+    print(f'____________________________________________________________________________\n')
 
     # Manual Search URLs
     print_search_urls(target_ip)
