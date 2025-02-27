@@ -1,4 +1,3 @@
-## 📌 **About**  
 CamXploit is a reconnaissance tool designed to help researchers and security enthusiasts check if an IP address is hosting an exposed CCTV camera. It scans common camera ports, checks for login pages, tests default credentials, and provides useful search links for further investigation.  
 
 ⚠️ **Disclaimer:** This tool is intended for educational and security research purposes **only**. Unauthorized scanning of systems you do not own is illegal. Use responsibly.  
@@ -47,26 +46,17 @@ Enter the **public IP address** of the target device when prompted.
 
 ## 📸 **Example Output**  
 
-<img width="100%" align="centre" src="https://github.com/spyboy-productions/Facad1ng/blob/main/demo.png" />
+<img width="100%" align="centre" src="https://github.com/spyboy-productions/CamXploit/blob/main/demo.png" />
 
 ---
 
 ## 🤖 **To-Do & Future Features**  
-- [ ] Add screenshot capture for login pages (optional)  
 - [ ] Add multi-threaded scanning for speed  
 - [ ] Expand camera brand detection  
 - [ ] Implement logging feature  
 
 ---
-
-## 📜 **License**  
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.  
-
----
-
 ## 🙌 **Contributions**  
 Feel free to submit issues, suggestions, or pull requests!  
-
----
 
 <h4 align="center"> If you find this GitHub repo useful, please consider giving it a star! ⭐️ </h4> 
