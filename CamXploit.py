@@ -2,9 +2,6 @@ import requests
 import socket
 import sys
 
-import sys
-
-# Define ANSI color codes for terminal output
 if sys.stdout.isatty():
     R = '\033[31m'  # Red
     G = '\033[32m'  # Green
