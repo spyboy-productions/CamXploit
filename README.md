@@ -47,36 +47,7 @@ Enter the **public IP address** of the target device when prompted.
 
 ## 📸 **Example Output**  
 
-```
-Enter Public IP of the Camera: 62.210.140.38
-
-[🌍] Use these URLs to check the camera exposure manually:
-  🔹 Shodan: https://www.shodan.io/search?query=62.210.140.38
-  🔹 Censys: https://search.censys.io/hosts/62.210.140.38
-  🔹 Zoomeye: https://www.zoomeye.org/searchResult?q=62.210.140.38
-  🔹 Google Dorking: https://www.google.com/search?q=site:62.210.140.38+inurl:view/view.shtml+OR+inurl:admin.html+OR+inurl:login
-
-[🌐] Checking Public IP Information:
-  IP: 62.210.140.38
-  City: Paris
-  Region: Île-de-France
-  Country: FR
-  ISP: AS12876 SCALEWAY S.A.S.
-
-[🔍] Scanning common CCTV ports:
-  ✅ Port 80 is OPEN!
-  ✅ Port 443 is OPEN!
-  ❌ Port 554 is CLOSED
-  ✅ Port 8080 is OPEN!
-  ✅ Port 8443 is OPEN!
-
-[📷] Checking if the device is a CAMERA:
-  ❌ No camera streams detected.
-
-[❌] No camera detected. Skipping login page, password, and vulnerability checks.
-
-[✅] Scan Completed!
-```
+<img width="100%" align="centre" src="https://github.com/spyboy-productions/Facad1ng/blob/main/demo.png" />
 
 ---
 
@@ -98,4 +69,4 @@ Feel free to submit issues, suggestions, or pull requests!
 
 ---
 
-Let me know if you need any edits! 🚀
+<h4 align="center"> If you find this GitHub repo useful, please consider giving it a star! ⭐️ </h4> 
