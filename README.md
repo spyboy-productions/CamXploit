@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img width="20%" src="https://github.com/spyboy-productions/CamXploit/blob/main/CCTV recon.webp" />
+  <img width="20%" src="https://github.com/spyboy-productions/CamXploit/blob/main/CCTV recon.jpg" />
 </p>
 
 
