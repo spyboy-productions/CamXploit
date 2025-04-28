@@ -45,7 +45,7 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ### **1️⃣ Clone the Repository**  
 ```bash
-git clone https://github.com/yourusername/CamXploit.git
+git clone https://github.com/spyboy-productions/CamXploit.git
 ```
 ```
 cd CamXploit
