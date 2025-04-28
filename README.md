@@ -38,6 +38,15 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 ✔️ **Tests for default credentials on login pages**  
 ✔️ **Provides manual search links (Shodan, Censys, Zoomeye, Google Dorking)**  
 ✔️ **Google Dorking suggestions for deeper recon**  
+✔️ **Enhanced Camera Detection** with detailed port analysis and brand identification  
+✔️ **Live Stream Detection** for RTSP, RTMP, HTTP, and MMS protocols  
+✔️ **Comprehensive IP & Location Information** with Google Maps/Earth links  
+✔️ **Multi-threaded Port Scanning** for faster results  
+✔️ **Enhanced Error Handling** and SSL support  
+✔️ **Detailed Camera Brand Detection** (Hikvision, Dahua, Axis, Sony, Bosch, Samsung, Panasonic, Vivotek)  
+✔️ **ONVIF Protocol Support** for standardized camera communication  
+✔️ **Smart Brute-force Protection** with rate limiting  
+✔️ **Detailed Port Analysis** showing server information and authentication types  
 
 ---
 
@@ -66,6 +75,9 @@ Enter the **public IP address** of the target device when prompted.
    - Searches for **login pages**  
    - Checks **default credentials**  
    - Identifies **camera brand & vulnerabilities**  
+   - Detects **live streams** (RTSP, RTMP, HTTP, MMS)  
+   - Provides **location information** with maps  
+   - Shows **server details** and authentication types  
 4️⃣ Provides **manual search URLs** for deeper investigation  
 
 ---
@@ -77,9 +89,13 @@ Enter the **public IP address** of the target device when prompted.
 ---
 
 ## 🤖 **To-Do & Future Features**  
-- [ ] Add multi-threaded scanning for speed  
-- [ ] Expand camera brand detection  
+- [x] Add multi-threaded scanning for speed  
+- [x] Expand camera brand detection  
 - [ ] Implement logging feature  
+- [ ] Add screenshot capture functionality  
+- [ ] Implement report generation  
+- [ ] Add network range scanning  
+- [ ] Implement MAC address lookup  
 
 ---
 ## 🙌 **Contributions**  
