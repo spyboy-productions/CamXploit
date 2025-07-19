@@ -30,6 +30,17 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ---
 
+## 🆕 What's New in v2.0.1
+- Massive port scan: Now scans 1000+ ports, including custom and high camera ports
+- CP Plus (CP-UVR-0401E1-IC2) and DVR/NVR detection
+- Enhanced live stream detection (RTSP/HTTP/RTMP/MMS, with real stream validation)
+- Multi-threaded authentication and password brute-force (much faster)
+- Improved camera indicator analysis (brand, model, login forms, titles)
+- Comprehensive IP/location info with Google Maps/Earth links
+- Improved error handling and progress reporting
+
+---
+
 ## 🚀 **Features**  
 ✔️ **Scans common CCTV ports** (80, 443, 554, 8080, 8443)  
 ✔️ **Detects exposed camera login pages**  
@@ -43,10 +54,17 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 ✔️ **Comprehensive IP & Location Information** with Google Maps/Earth links  
 ✔️ **Multi-threaded Port Scanning** for faster results  
 ✔️ **Enhanced Error Handling** and SSL support  
-✔️ **Detailed Camera Brand Detection** (Hikvision, Dahua, Axis, Sony, Bosch, Samsung, Panasonic, Vivotek)  
+✔️ **Detailed Camera Brand Detection** (Hikvision, Dahua, Axis, Sony, Bosch, Samsung, Panasonic, Vivotek, CP Plus)  
 ✔️ **ONVIF Protocol Support** for standardized camera communication  
 ✔️ **Smart Brute-force Protection** with rate limiting  
 ✔️ **Detailed Port Analysis** showing server information and authentication types  
+
+---
+
+## 📚 Supported Brands & Devices
+- Hikvision, Dahua, Axis, Sony, Bosch, Samsung, Panasonic, Vivotek, CP Plus, and most generic DVR/NVRs
+- CP Plus DVRs (e.g., CP-UVR-0401E1-IC2) with custom ports
+- Any device exposing RTSP, HTTP, RTMP, or MMS video streams
 
 ---
 
@@ -82,11 +100,27 @@ Enter the **public IP address** of the target device when prompted.
 
 ---
 
+## ⚡ Usage Tips
+- Scanning all ports (1000+) may take several minutes, depending on your network and target.
+- The tool uses multi-threading for port, login, and password checks for speed.
+- If you see "No camera found" but you know a camera is present, check the open ports and look for custom ports in the output.
+- For best results, run as administrator/root to avoid local firewall issues.
+
+---
+
+## 📚 Troubleshooting
+- If no open ports are found, ensure the target is online and not behind a strict firewall.
+- If live streams are not detected, try accessing the URLs manually in VLC or a browser.
+- For best detection, ensure your Python version is 3.6+ and all dependencies are installed.
+
+---
+
 ## 📸 **Example Output**  
 
 <img width="100%" align="centre" src="https://github.com/spyboy-productions/CamXploit/blob/main/demo.png" />
 
 ---
+
 
 ## 🤖 **To-Do & Future Features**  
 - [x] Add multi-threaded scanning for speed  
