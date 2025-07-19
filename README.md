@@ -28,6 +28,10 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ⚠️ **Disclaimer:** This tool is intended for educational and security research purposes **only**. Unauthorized scanning of systems you do not own is illegal. Use responsibly.  
 
+### ☁️ Run It Instantly on Google Colab (No Installation Needed)
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/spyboy-productions/CamXploit/blob/main/CamXploit.ipynb)
+
 ---
 
 ## 🆕 What's New in v2.0.1
