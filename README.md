@@ -42,7 +42,8 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 ---
 
 ## 🚀 **Features**  
-✔️ **Scans common CCTV ports**
+
+✔️ **Scans all common CCTV ports**  
 ✔️ **Detects exposed camera login pages**  
 ✔️ **Checks if the device is a camera stream**  
 ✔️ **Identifies camera brands & known vulnerabilities**  
