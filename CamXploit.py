@@ -3,6 +3,7 @@ import socket
 import sys
 import threading
 import warnings
+import argparse
 from requests.auth import HTTPBasicAuth
 from xml.etree import ElementTree as ET
 import ipaddress
@@ -1061,7 +1062,13 @@ def detect_live_streams(ip, open_ports):
 def main():
     global threads_running
     try:
-        target_ip = input(f"{G}[+] {C}Enter IP address: {W}").strip()
+        parser = argparse.ArgumentParser(
+        description="CamXploit - Camera Exploitation & Exposure Scanner.",
+        epilog=f"Example: python {sys.argv[0]} 192.168.1.100"
+        )
+        parser.add_argument("target_ip", help="The IP address of the target camera to scan.")
+        args = parser.parse_args()
+        target_ip = args.target_ip.strip()
         if not validate_ip(target_ip):
             return
         
