@@ -870,6 +870,9 @@ def detect_live_streams(ip, open_ports):
             '/live/1/h264.sdp',  # Generic
             '/live/1/mpeg4.sdp',  # Generic
             '/live/1/audio.sdp'  # Generic
+            '/cam/realmonitor?channel=1&subtype=0',  # Amcrest (Main Stream)
+            '/cam/realmonitor?channel=1&subtype=1',  # Amcrest (Sub Stream)
+            '/h264Preview_01_main' #Armcrest DVR/NVR
         ],
         'rtmp': [
             '/live',
