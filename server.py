@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 def is_valid_ip(ip_str):
     try:
-        ipaddress.ip_address(ip_str)
+        ipaddress.ip_network(ip_str)
         return True
     except ValueError:
         return False
@@ -20,31 +20,54 @@ def index():
 
 @app.route('/scan', methods=['POST'])
 def scan():
-    ip = request.json.get('ip')
+    ip_input = request.json.get('ip')
 
-    if not ip or not is_valid_ip(ip):
-        return Response("Invalid or missing IP address.", status=400)
-
-    safe_ip = secure_filename(ip)
+    if not ip_input or not is_valid_ip(ip_input):
+        return Response("Invalid or missing IP address or CIDR.", status=400)
 
     def generate_output():
-        command = ['stdbuf', '-o0', 'python3', 'CamXploit.py']
-        process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
+        try:
+            network = ipaddress.ip_network(ip_input)
+            for ip in network.hosts():
+                safe_ip = secure_filename(str(ip))
+                yield f"data: --- Scanning {safe_ip} ---\\n\\n"
+                command = ['stdbuf', '-o0', 'python3', 'CamXploit.py']
+                process = subprocess.Popen(
+                    command,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
+                )
 
-        process.stdin.write(safe_ip + '\n')
-        process.stdin.flush()
+                process.stdin.write(safe_ip + '\n')
+                process.stdin.flush()
 
-        for line in iter(process.stdout.readline, ''):
-            yield f"data: {line}\\n\\n"
-        process.stdout.close()
-        process.wait()
+                for line in iter(process.stdout.readline, ''):
+                    yield f"data: [{safe_ip}] {line}\\n\\n"
+                process.stdout.close()
+                process.wait()
+        except ValueError:
+            safe_ip = secure_filename(ip_input)
+            command = ['stdbuf', '-o0', 'python3', 'CamXploit.py']
+            process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+
+            process.stdin.write(safe_ip + '\n')
+            process.stdin.flush()
+
+            for line in iter(process.stdout.readline, ''):
+                yield f"data: {line}\\n\\n"
+            process.stdout.close()
+            process.wait()
+
 
     return Response(generate_output(), mimetype='text/event-stream')
 
