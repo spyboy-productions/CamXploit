@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HelloBird :: CCTV Recon</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="windows">
+
+    <div class="window" style="width: 800px; margin: 50px auto;">
+        <div class="title-bar">
+            <div class="title-bar-text">HelloBird :: CCTV Reconnaissance</div>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize"></button>
+                <button aria-label="Maximize"></button>
+                <button aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="window-body">
+            <p>Enter a public IP address to scan for exposed cameras.</p>
+            <div class="field-row-stacked" style="margin-top: 20px;">
+                <label for="ipAddress">Target IP:</label>
+                <input id="ipAddress" type="text" placeholder="e.g., 8.8.8.8" />
+            </div>
+
+            <section class="field-row" style="justify-content: flex-end; margin-top: 20px;">
+                <button id="scanButton">Scan</button>
+            </section>
+
+            <div class="sunken-panel" id="output-container" style="margin-top: 20px; height: 300px; overflow-y: scroll; font-family: 'monaco', monospace; font-size: 12px; line-height: 1.2;">
+                <p>Awaiting command...</p>
+            </div>
+
+            <div id="video-container" style="margin-top: 10px; background-color: black; display: none;">
+               <video id="video-player" style="width: 100%;" controls></video>
+            </div>
+        </div>
+        <div class="status-bar">
+            <p id="statusBar" class="status-bar-field">Ready</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ipAddressInput = document.getElementById('ipAddress');
+            const scanButton = document.getElementById('scanButton');
+            const outputContainer = document.getElementById('output-container');
+            const statusBar = document.getElementById('statusBar');
+            const videoContainer = document.getElementById('video-container');
+            const videoPlayer = document.getElementById('video-player');
+            let eventSource;
+            let hls;
+
+            scanButton.addEventListener('click', () => {
+                const ip = ipAddressInput.value.trim();
+                // Simple client-side validation
+                if (!ip) {
+                    outputContainer.innerHTML = '<p style="color: red;">Error: IP address cannot be empty.</p>';
+                    return;
+                }
+
+                // Clean up any previous connection
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                // Clear previous output and update status
+                outputContainer.innerHTML = '';
+                statusBar.textContent = `Scanning ${ip}...`;
+                scanButton.disabled = true;
+
+                // Establish the EventSource connection to our backend
+                eventSource = new EventSource('/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip: ip }),
+                });
+
+                // This is the core listener for incoming data from the server.
+                eventSource.onmessage = function(event) {
+                    const line = document.createElement('div');
+                    const content = event.data;
+
+                    // Regex to find potential stream URLs
+                    const urlRegex = /(rtsp|rtmp|http|https)?:\\/\\/[^\\s\"']+/gi;
+                    // Security: Use textContent for non-URL parts and create links safely.
+                    line.innerHTML = content.replace(urlRegex, (url) => {
+                        // Make URLs clickable for Task 4
+                        return `<a href="#" class="stream-link" data-url="${url}">${url}</a>`;
+                    });
+
+                    outputContainer.appendChild(line);
+                    // Auto-scroll to the bottom
+                    outputContainer.scrollTop = outputContainer.scrollHeight;
+                };
+
+                // Handle errors with the connection
+                eventSource.onerror = function() {
+                    statusBar.textContent = 'Error: Connection to server lost or scan complete.';
+                    scanButton.disabled = false;
+                    eventSource.close();
+                };
+            });
+
+            outputContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('stream-link')) {
+                    e.preventDefault();
+                    const streamUrl = e.target.getAttribute('data-url');
+                    statusBar.textContent = `Loading stream: ${streamUrl}`;
+                    videoContainer.style.display = 'block';
+
+                    if (hls) {
+                        hls.destroy();
+                    }
+                    hls = new Hls();
+                    const encodedUrl = btoa(streamUrl); // Use url-safe base64 in production
+                    // The /stream/ endpoint would need to serve the HLS playlist
+                    hls.loadSource(`/stream/${encodedUrl}`);
+                    hls.attachMedia(videoPlayer);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        videoPlayer.play();
+                        statusBar.textContent = 'Stream is playing.';
+                    });
+                }
+            });
+
+            // Final memory leak prevention: ensure eventSource is closed if the user navigates away.
+            window.addEventListener('beforeunload', () => {
+                if (eventSource) {
+                    eventSource.close();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
