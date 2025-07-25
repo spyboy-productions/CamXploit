@@ -73,23 +73,32 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ---
 
-## 🛠️ **Installation**  
+## 🛠️ **Installation**
 
-### **1️⃣ Clone the Repository**  
+### **1️⃣ Clone the Repository**
 ```bash
 git clone https://github.com/spyboy-productions/CamXploit.git
 ```
-```
-cd CamXploit
-```  
 ```bash
-pip install -r requirements.txt
+cd CamXploit
 ```
+
+### **2️⃣ Setup the Environment**
+This project uses a `setup.sh` script to create a virtual environment and install all the necessary dependencies.
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+### **3️⃣ Run the Application**
+Once the setup is complete, you can run the application with the following command:
+```bash
+source .venv/bin/activate
+python3 server.py
+```
+Then, open your web browser and navigate to `http://localhost:5000`.
+
 ---
-```
-python CamXploit.py
-```
-Enter the **public IP address** of the target device when prompted.  
 
 ### **🔍 What It Does:**  
 1️⃣ **Scans open ports** (Common CCTV ports)  
