@@ -73,30 +73,36 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ---
 
-## 🛠️ **Installation**
+## 🚀 **Deployment**
 
-### **1️⃣ Clone the Repository**
-```bash
-git clone https://github.com/spyboy-productions/CamXploit.git
-```
-```bash
-cd CamXploit
-```
+This application is designed to be deployed as a Hugging Face Space.
 
-### **2️⃣ Setup the Environment**
-This project uses a `setup.sh` script to create a virtual environment and install all the necessary dependencies.
-```bash
-chmod +x setup.sh
-./setup.sh
-```
+### **1️⃣ Create a Hugging Face Space**
 
-### **3️⃣ Run the Application**
-Once the setup is complete, you can run the application with the following command:
-```bash
-source .venv/bin/activate
-python3 server.py
-```
-Then, open your web browser and navigate to `http://localhost:5000`.
+1.  Go to [huggingface.co/spaces](https://huggingface.co/spaces) and click on "New Space".
+2.  Give your Space a name and select "Docker" as the Space SDK.
+3.  Choose "Create Space".
+
+### **2️⃣ Upload the Code**
+
+1.  Clone the repository to your local machine:
+    ```bash
+    git clone https://github.com/spyboy-productions/CamXploit.git
+    ```
+2.  Navigate to the cloned repository:
+    ```bash
+    cd CamXploit
+    ```
+3.  Add the Hugging Face Space as a remote:
+    ```bash
+    git remote add space https://huggingface.co/spaces/<your-username>/<your-space-name>
+    ```
+4.  Push the code to the Space:
+    ```bash
+    git push --force space main
+    ```
+
+The Space will then build the Docker image and start the application. You can view the application by clicking on the "App" tab in your Space.
 
 ---
 
