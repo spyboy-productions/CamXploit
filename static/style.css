@@ -1,0 +1,9 @@
+/* A basic style for the HelloBird application */
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    color: #333;
+}

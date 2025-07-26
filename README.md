@@ -73,23 +73,38 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 
 ---
 
-## 🛠️ **Installation**  
+## 🚀 **Deployment**
 
-### **1️⃣ Clone the Repository**  
-```bash
-git clone https://github.com/spyboy-productions/CamXploit.git
-```
-```
-cd CamXploit
-```  
-```bash
-pip install -r requirements.txt
-```
+This application is designed to be deployed as a Hugging Face Space.
+
+### **1️⃣ Create a Hugging Face Space**
+
+1.  Go to [huggingface.co/spaces](https://huggingface.co/spaces) and click on "New Space".
+2.  Give your Space a name and select "Docker" as the Space SDK.
+3.  Choose "Create Space".
+
+### **2️⃣ Upload the Code**
+
+1.  Clone the repository to your local machine:
+    ```bash
+    git clone https://github.com/spyboy-productions/CamXploit.git
+    ```
+2.  Navigate to the cloned repository:
+    ```bash
+    cd CamXploit
+    ```
+3.  Add the Hugging Face Space as a remote:
+    ```bash
+    git remote add space https://huggingface.co/spaces/<your-username>/<your-space-name>
+    ```
+4.  Push the code to the Space:
+    ```bash
+    git push --force space main
+    ```
+
+The Space will then build the Docker image and start the application. You can view the application by clicking on the "App" tab in your Space.
+
 ---
-```
-python CamXploit.py
-```
-Enter the **public IP address** of the target device when prompted.  
 
 ### **🔍 What It Does:**  
 1️⃣ **Scans open ports** (Common CCTV ports)  
