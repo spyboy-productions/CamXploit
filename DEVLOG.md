@@ -82,3 +82,47 @@ The implementation of this feature has been done with security in mind. The foll
 -   **API Key:** The Hugging Face API key is stored as an environment variable and is not hard-coded into the application.
 
 -   **Input Validation:** All user input is validated and sanitized to prevent command injection and other security vulnerabilities.
+
+## Plan for Remaining Features
+
+This section outlines the plan for implementing the remaining features from the original CamXploit `README.md`.
+
+### Implement Logging Feature
+
+-   **Justification:** A logging feature is essential for debugging and for keeping a record of the application's activity.
+-   **Implementation:** I will use Python's built-in `logging` module to implement a comprehensive logging feature. The application will log all important events, including scan initiations, errors, and successful stream connections. The log file will be stored in a `logs` directory, and it will be rotated daily to prevent it from growing too large.
+
+    ```python
+    import logging
+    from logging.handlers import TimedRotatingFileHandler
+
+    # Create a logs directory if it doesn't already exist
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+    # Create a logger
+    logger = logging.getLogger('HelloBird')
+    logger.setLevel(logging.INFO)
+
+    # Create a rotating file handler
+    handler = TimedRotatingFileHandler('logs/hellobird.log', when='d', interval=1, backupCount=7)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+    # Add the handler to the logger
+    logger.addHandler(handler)
+    ```
+
+### Add Screenshot Capture Functionality
+
+-   **Justification:** The ability to capture screenshots from video streams would be a valuable feature for reconnaissance and documentation.
+-   **Implementation:** I will extend the existing `capture_frame` function to allow for capturing multiple screenshots. The frontend will be updated to include a "Capture Screenshot" button, which will send a request to the backend to capture a screenshot from the current video stream. The captured screenshots will be stored in a `screenshots` directory, and they will be displayed to the user in the frontend.
+
+### Implement Report Generation
+
+-   **Justification:** The ability to generate reports of scan results would be a useful feature for sharing and for further analysis.
+-   **Implementation:** I will create a new endpoint, `/report`, that will generate a PDF report of the scan results for a given IP address or CIDR range. The report will include all the information from the scan, including the AI-powered contextual summary. I will use a library such as `ReportLab` or `WeasyPrint` to generate the PDF report.
+
+### Implement MAC Address Lookup
+
+-   **Justification:** The ability to look up the MAC address of a device can provide valuable information about the manufacturer of the device.
+-   **Implementation:** I will use a library such as `scapy` to send ARP requests to the target device and to get its MAC address. The MAC address will then be used to look up the manufacturer of the device using an online API. The manufacturer information will be added to the scan report.
