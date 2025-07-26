@@ -31,6 +31,11 @@
                 <p>Awaiting command...</p>
             </div>
 
+            <div id="context-container" style="margin-top: 10px; display: none;">
+                <h3>Contextual Information</h3>
+                <div id="context-content"></div>
+            </div>
+
             <div id="video-container" style="margin-top: 10px; background-color: black; display: none;">
                <video id="video-player" style="width: 100%;" controls></video>
             </div>
@@ -84,15 +89,28 @@
                     const line = document.createElement('div');
                     const content = event.data;
 
-                    // Regex to find potential stream URLs
-                    const urlRegex = /(rtsp|rtmp|http|https)?:\\/\\/[^\\s\"']+/gi;
-                    // Security: Use textContent for non-URL parts and create links safely.
-                    line.innerHTML = content.replace(urlRegex, (url) => {
-                        // Make URLs clickable for Task 4
-                        return `<a href="#" class="stream-link" data-url="${url}">${url}</a>`;
-                    });
+                    try {
+                        const data = JSON.parse(content);
+                        const contextContainer = document.getElementById('context-container');
+                        const contextContent = document.getElementById('context-content');
+                        contextContent.innerHTML = `
+                            <p><strong>Likely Environment:</strong> ${data.likely_environment}</p>
+                            <p><strong>Key Objects Identified:</strong> ${data.key_objects_identified.join(', ')}</p>
+                            <p><strong>Contextual Summary:</strong> ${data.contextual_summary}</p>
+                        `;
+                        contextContainer.style.display = 'block';
+                    } catch (e) {
+                        // Regex to find potential stream URLs
+                        const urlRegex = /(rtsp|rtmp|http|https)?:\\/\\/[^\\s\"']+/gi;
+                        // Security: Use textContent for non-URL parts and create links safely.
+                        line.innerHTML = content.replace(urlRegex, (url) => {
+                            // Make URLs clickable for Task 4
+                            return `<a href="#" class="stream-link" data-url="${url}">${url}</a>`;
+                        });
+                        outputContainer.appendChild(line);
+                    }
 
-                    outputContainer.appendChild(line);
+
                     // Auto-scroll to the bottom
                     outputContainer.scrollTop = outputContainer.scrollHeight;
                 };
