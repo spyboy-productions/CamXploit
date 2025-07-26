@@ -120,13 +120,9 @@ The Space will then build the Docker image and start the application. You can vi
 
 ---
 
-## ⚡ Usage Tips
-- Scanning all ports (1000+) may take several minutes, depending on your network and target.
-- The tool uses multi-threading for port, login, and password checks for speed.
-- If you see "No camera found" but you know a camera is present, check the open ports and look for custom ports in the output.
-- For best results, run as administrator/root to avoid local firewall issues.
+## Roadmap
 
----
+The future development plans for this project are outlined in the [ROADMAP.md](ROADMAP.md) file.
 
 ## 📚 Troubleshooting
 - If no open ports are found, ensure the target is online and not behind a strict firewall.

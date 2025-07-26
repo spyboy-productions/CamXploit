@@ -57,12 +57,26 @@ The application was tested thoroughly to ensure that it is working as expected. 
 
 - **Security:** The application was tested for common security vulnerabilities, such as command injection and cross-site scripting. No security vulnerabilities were found.
 
-## Future Enhancements
+## AI-Powered Contextual Analysis
 
-The following enhancements are planned for future versions of the application:
+The latest version of HelloBird includes AI-powered contextual analysis of video streams. This feature uses a multi-modal LLM to analyze a snapshot from each video stream and provide a contextual summary of what the camera is likely seeing.
 
-- **Network Range Scanning (CIDR Notation):** Allow users to input a network range (e.g., 8.8.8.0/24) to scan multiple targets concurrently.
+### Implementation Details
 
-- **Automated Data Correlation & Reporting:** Evolve the output from a simple text log to a structured report.
+1.  **Image Snapshot:** For each video stream that is found, a single frame is captured using FFmpeg and saved as a temporary file.
 
-- **Session Persistence & History:** Save scan results and allow users to view previous reports.
+2.  **Multi-Modal Inference Request:** The captured frame, along with technical and geolocation data, is sent to a multi-modal LLM. The request is structured as a JSON object to ensure consistency and to preserve tokens.
+
+3.  **Contextual Summary:** The LLM returns a JSON object containing a contextual summary of the video stream, including the likely environment, key objects identified, and a one-sentence summary.
+
+4.  **Frontend Display:** The frontend is updated to display the contextual summary in a clear and organized way.
+
+### Security Considerations
+
+The implementation of this feature has been done with security in mind. The following measures have been taken to ensure the security of the application:
+
+-   **Temporary Files:** The captured frames are saved as temporary files and are deleted after they have been processed.
+
+-   **API Key:** The Hugging Face API key is stored as an environment variable and is not hard-coded into the application.
+
+-   **Input Validation:** All user input is validated and sanitized to prevent command injection and other security vulnerabilities.
