@@ -4,6 +4,8 @@
 
 This document outlines the development process for HelloBird v1.1, a web-based wrapper for the CamXploit CCTV reconnaissance tool. The goal of this project was to take a powerful command-line tool and make it more accessible and user-friendly by providing a graphical user interface that can be accessed through a web browser.
 
+This project is designed to be developed in a fork of the original [CamXploit repository](https://github.com/spyboy-productions/CamXploit). This allows for a clean separation between the original tool and the web-based wrapper, and it gives the user full ownership and control over their own version of the application.
+
 ## Key Decisions and Reasoning
 
 ### 1. Technology Stack
