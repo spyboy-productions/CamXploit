@@ -1062,33 +1062,53 @@ def main():
         if not validate_ip(target_ip):
             return
         
+        ip_obj = ipaddress.ip_address(target_ip)
+
         print(BANNER)
         print('____________________________________________________________________________\n')
-        
-        print_search_urls(target_ip)
-        google_dork_search(target_ip)
-        get_ip_location_info(target_ip)
-        
+
+        # Detect PRIVATE vs PUBLIC
+        if ip_obj.is_private:
+            print(f"{Y}[🏠] Private Network Detected — Skipping Shodan, IP-Location, and Google Dorking.{W}")
+            skip_osint = True
+        else:
+            skip_osint = False
+
+        # Only run OSINT for PUBLIC IPs
+        if not skip_osint:
+            print_search_urls(target_ip)
+            google_dork_search(target_ip)
+            get_ip_location_info(target_ip)
+        else:
+            print(f"{C}[ℹ️] Proceeding directly to camera scanning...{W}")
+
+        # Begin scanning
         open_ports = check_ports(target_ip)
+
         if open_ports:
             camera_found = check_if_camera(target_ip, open_ports)
-            if not camera_found:
-                choice = input("\n[❓] No camera found. Do you still want to check login pages, vulnerabilities, and passwords? [y/N]: ").strip().lower()
+
+            if not camera_found and not skip_osint:
+                choice = input("\n[❓] No camera found. Continue checking login pages, fingerprints, and passwords? [y/N]: ").strip().lower()
                 if choice != "y":
                     print("\n[✅] Scan Completed! No camera found.")
                     return
+
             check_login_pages(target_ip, open_ports)
             fingerprint_camera(target_ip, open_ports)
             test_default_passwords(target_ip, open_ports)
             detect_live_streams(target_ip, open_ports)
+
         else:
             print("\n[❌] No open ports found. Likely no camera here.")
+        
         print("\n[✅] Scan Completed!")
         
     except KeyboardInterrupt:
         print("\n[!] Scan aborted by user")
         threads_running = False
         sys.exit(1)
-
+        
 if __name__ == "__main__":
+
     main()
