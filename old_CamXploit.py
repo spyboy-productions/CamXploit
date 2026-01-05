@@ -3,8 +3,10 @@ import socket
 import sys
 import threading
 import warnings
+from requests.auth import HTTPBasicAuth
 from xml.etree import ElementTree as ET
 import ipaddress
+from urllib.parse import urlparse
 import base64
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import time
@@ -45,7 +47,7 @@ BANNER = rf"""
   {C}[🔍] Discover open CCTV cameras & security flaws
   {Y}[⚠️] For educational & security research purposes only!{W}
 
-  {B}VERSION{W}  = 2.0.2
+  {B}VERSION{W}  = 2.0.1
   {B}Made By{W}  = Spyboy
   {B}Twitter{W}  = https://spyboy.in/twitter
   {B}Discord{W}  = https://spyboy.in/Discord
@@ -55,11 +57,11 @@ BANNER = rf"""
 # Common ports used by IP cameras and CCTV devices
 COMMON_PORTS = [
     # Standard web ports
-    80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 443, 8080, 8443, 8000, 8001, 8008, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089,
+    80, 443, 8080, 8443, 8000, 8001, 8008, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089,
     8090, 8091, 8092, 8093, 8094, 8095, 8096, 8097, 8098, 8099,
     
     # RTSP ports
-    554, 8554, 10554, 1554, 2554, 3554, 4554, 5554, 6554, 7554, 9554,
+    554, 8554, 10554, 1554, 2554, 3554, 4554, 5554, 6554, 7554, 8554, 9554,
     
     # RTMP ports
     1935, 1936, 1937, 1938, 1939,
@@ -72,14 +74,9 @@ COMMON_PORTS = [
     3702, 3703, 3704, 3705, 3706, 3707, 3708, 3709, 3710,
     
     # VLC streaming ports
-    8100, 8110, 8120, 8130, 8140, 8150, 8160, 8170, 8180, 8190,
+    8080, 8090, 8100, 8110, 8120, 8130, 8140, 8150, 8160, 8170, 8180, 8190,
     
     # Common alternative ports
-    21, 22, 23, 25, 53, 110, 143, 993, 995,  # FTP, SSH, Telnet, SMTP, DNS, POP3, IMAP, IMAPS, POP3S
-    1024, 1025, 1026, 1027, 1028, 1029, 1030,  # Common alternative ports
-    2000, 2001, 2002, 2003, 2004, 2005,  # Common alternative ports
-    3000, 3001, 3002, 3003, 3004, 3005,  # Common alternative ports
-    4000, 4001, 4002, 4003, 4004, 4005,  # Common alternative ports
     5000, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 5009, 5010,
     6000, 6001, 6002, 6003, 6004, 6005, 6006, 6007, 6008, 6009, 6010,
     7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010,
@@ -147,111 +144,19 @@ COMMON_PORTS = [
     65000, 65001, 65002, 65003, 65004, 65005, 65006, 65007, 65008, 65009, 65010
 ]
 
-# Remove duplicates while preserving order
-COMMON_PORTS = list(dict.fromkeys(COMMON_PORTS))
-
-# Best‑effort mapping of common CCTV / streaming ports to service names
-PORT_SERVICE_MAP = {
-    # Web interfaces
-    80:  ("HTTP", "Web Interface"),
-    81:  ("HTTP-Alt", "Web Interface"),
-    82:  ("HTTP-Alt", "Web Interface"),
-    83:  ("HTTP-Alt", "Web Interface"),
-    84:  ("HTTP-Alt", "Web Interface"),
-    85:  ("HTTP-Alt", "Web Interface"),
-    86:  ("HTTP-Alt", "Web Interface"),
-    87:  ("HTTP-Alt", "Web Interface"),
-    88:  ("HTTP-Alt", "Web Interface"),
-    89:  ("HTTP-Alt", "Web Interface"),
-    443: ("HTTPS", "Secure Web Interface"),
-    8080: ("HTTP-Alt", "Web Interface"),
-    8443: ("HTTPS-Alt", "Secure Web Interface"),
-    8000: ("HTTP-Alt", "Web Interface / Hikvision"),
-    8001: ("HTTP-Alt", "Web Interface"),
-    8888: ("HTTP-Alt", "Web Interface"),
-    9000: ("HTTP-Alt", "Web Interface"),
-
-    # RTSP / RTMP streaming
-    554: ("RTSP", "Real-Time Streaming Protocol"),
-    8554: ("RTSP-Alt", "Real-Time Streaming Protocol"),
-    10554: ("RTSP-Alt", "Real-Time Streaming Protocol"),
-    1935: ("RTMP", "Real-Time Messaging Protocol (Streaming)"),
-
-    # ONVIF / discovery
-    3702: ("ONVIF", "Device Discovery / Control"),
-
-    # Vendor‑specific / DVR ports
-    37777: ("Dahua", "DVR/NVR Service"),
-    37778: ("Dahua", "DVR/NVR Service"),
-    8008:  ("Hikvision", "Web / API"),
-
-    # MMS / legacy streaming
-    1755: ("MMS", "Microsoft Media Server"),
-}
-
 # Common admin login pages or interesting paths for cameras
 COMMON_PATHS = [
     "/", "/admin", "/login", "/viewer", "/webadmin", "/video", "/stream", "/live", "/snapshot", "/onvif-http/snapshot",
     "/system.ini", "/config", "/setup", "/cgi-bin/", "/api/", "/camera", "/img/main.cgi"
 ]
 
-# Default credentials commonly used in IP cameras / DVR / NVR
-# This is intentionally broad and contains combinations seen across
-# Hikvision, Dahua, Axis, CP Plus, Uniview, generic OEM DVRs, etc.
+# Default credentials commonly used in IP cameras
 DEFAULT_CREDENTIALS = {
-    # Very common admin-style accounts
-    "admin": [
-        "admin", "1234", "12345", "123456", "1234567", "12345678", "123456789",
-        "admin123", "admin1234", "admin12345",
-        "password", "pass", "123", "1111", "0000", "8888",
-        "default", "admin@123", "Admin123", "Admin1234",
-        "888888", "666666",  # Common on many DVRs (Hikvision, Dahua, OEM)
-        "4321", "9999"
-    ],
-
-    # Root-style accounts (Linux‑based firmwares, some NVRs)
-    "root": [
-        "root", "toor", "1234", "12345", "123456",
-        "pass", "password", "root123", "admin", "1111", "0000"
-    ],
-
-    # Generic user accounts
-    "user": [
-        "user", "user123", "password", "1234", "12345", "123456"
-    ],
-    "guest": [
-        "guest", "guest123", "1234", "12345", "123456"
-    ],
-    "operator": [
-        "operator", "operator123", "1234", "12345"
-    ],
-
-    # Additional usernames seen on various CCTV brands / OEM NVRs
-    "administrator": [
-        "administrator", "admin", "1234", "12345", "123456", "password"
-    ],
-    "supervisor": [
-        "supervisor", "1234", "12345", "123456", "password"
-    ],
-    "support": [
-        "support", "support123", "1234", "password"
-    ],
-    "system": [
-        "system", "system123", "1234", "12345", "123456"
-    ],
-    "viewer": [
-        "viewer", "viewer123", "1234", "12345"
-    ],
-    "admin1": [
-        "admin", "admin1", "1234", "12345", "123456", "password"
-    ],
-    # Some devices expose numeric "admin"‑like users
-    "888888": [
-        "888888", "123456", "000000"
-    ],
-    "666666": [
-        "666666", "123456", "000000"
-    ],
+    "admin": ["admin", "1234", "admin123", "password", "12345", "123456", "1111", "default"],
+    "root": ["root", "toor", "1234", "pass", "root123"],
+    "user": ["user", "user123", "password"],
+    "guest": ["guest", "guest123"],
+    "operator": ["operator", "operator123"],
 }
 
 # New constants
@@ -280,8 +185,7 @@ CVE_DATABASE = {
         "CVE-2020-29557", "CVE-2020-29558", "CVE-2020-29559", "CVE-2020-29560"
     ],
     "cp plus": [
-        # Note: CP Plus CVEs - check for latest vulnerabilities
-        # Common issues: default credentials, unpatched firmware
+        "CVE-2021-XXXXX", "CVE-2022-XXXXX", "CVE-2023-XXXXX"
     ]
 }
 
@@ -343,31 +247,7 @@ def get_ip_location_info(ip):
     except Exception as e:
         print(f"{R}[!] Error getting IP information: {str(e)}{W}")
 
-def parse_ip_port(input_str):
-    """Parse IP:PORT format or just IP. Returns (ip, port) where port is None if not provided."""
-    input_str = input_str.strip()
-    
-    # Check if port is provided
-    if ':' in input_str:
-        parts = input_str.rsplit(':', 1)  # Split from right to handle IPv6
-        if len(parts) == 2:
-            ip_str, port_str = parts
-            try:
-                port = int(port_str)
-                if 1 <= port <= 65535:
-                    return ip_str.strip(), port
-                else:
-                    print(f"{R}[!] Invalid port number. Must be between 1-65535{W}")
-                    return None, None
-            except ValueError:
-                print(f"{R}[!] Invalid port number: {port_str}{W}")
-                return None, None
-    
-    # No port provided, just IP
-    return input_str, None
-
 def validate_ip(target_ip):
-    """Validate IP address (with or without port)"""
     try:
         ip = ipaddress.ip_address(target_ip)
         if ip.is_private:
@@ -380,64 +260,10 @@ def validate_ip(target_ip):
 def get_protocol(port):
     return "https" if port in HTTPS_PORTS else "http"
 
-def probe_rtsp(ip, port):
-    """
-    Best‑effort RTSP detection that does NOT rely only on port number.
-    Sends a minimal RTSP OPTIONS request and inspects the response.
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(PORT_SCAN_TIMEOUT)
-            if s.connect_ex((ip, port)) != 0:
-                return False
-
-            request = (
-                f"OPTIONS rtsp://{ip}:{port}/ RTSP/1.0\r\n"
-                "CSeq: 1\r\n"
-                "\r\n"
-            ).encode("ascii", errors="ignore")
-
-            s.sendall(request)
-            try:
-                data = s.recv(2048)
-            except socket.timeout:
-                return False
-
-            if not data:
-                return False
-
-            text = data.decode(errors="ignore")
-            if "RTSP/1.0" not in text:
-                return False
-
-            # Look for typical RTSP verbs or Public header
-            indicators = ["Public:", "DESCRIBE", "SETUP", "PLAY"]
-            return any(ind in text for ind in indicators)
-    except Exception:
-        return False
-
-def check_ports(ip, additional_ports=None):
-    """
-    Scan ports on target IP.
-    
-    Args:
-        ip: Target IP address
-        additional_ports: Optional list of additional ports to scan (e.g., user-specified ports)
-    
-    Returns:
-        tuple: (open_ports, rtsp_ports)
-    """
-    # Combine COMMON_PORTS with any additional ports
-    ports_to_scan = list(COMMON_PORTS)
-    if additional_ports:
-        for port in additional_ports:
-            if port not in ports_to_scan:
-                ports_to_scan.append(port)
-    
+def check_ports(ip):
     print(f"\n[🔍] {C}Scanning comprehensive CCTV ports on IP:{W}", ip)
-    print(f"{Y}[⚠️] This will scan {len(ports_to_scan)} ports. This may take a while...{W}")
+    print(f"{Y}[⚠️] This will scan {len(COMMON_PORTS)} ports. This may take a while...{W}")
     open_ports = []
-    rtsp_ports = []  # Track RTSP-detected ports
     lock = threading.Lock()
     scanned_count = 0
 
@@ -451,44 +277,13 @@ def check_ports(ip, additional_ports=None):
                 if sock.connect_ex((ip, port)) == 0:
                     with lock:
                         open_ports.append(port)
-                        scanned_count += 1  # Count open ports too
-                        # Determine protocol (current scan is TCP only)
-                        proto = "tcp"
-
-                        # First, actively probe for RTSP on this port
-                        is_rtsp = probe_rtsp(ip, port)
-                        if is_rtsp:
-                            rtsp_ports.append(port)  # Track RTSP port
-                            if port == 554:
-                                service_name, service_desc = "RTSP", "Real-Time Streaming Protocol"
-                            else:
-                                service_name, service_desc = "RTSP", "Non-standard port"
-                        else:
-                            # Look up a friendly service name if known
-                            service_name, service_desc = PORT_SERVICE_MAP.get(
-                                port, ("Unknown Service", "")
-                            )
-
-                        if service_desc:
-                            service_str = f"{service_name}  ({service_desc})"
-                        else:
-                            service_str = service_name
-
-                        print(f"  ✅ [OPEN] {port}/{proto}  {service_str}")
-
-                        # If RTSP was positively detected, also show a suggested stream URL
-                        if is_rtsp:
-                            print(f"      Stream URL: rtsp://{ip}:{port}/")
-                        
-                        # Progress indicator
-                        if scanned_count % 50 == 0:
-                            print(f"  📊 Scanned {scanned_count}/{len(ports_to_scan)} ports...")
+                        print(f"  ✅ Port {port} OPEN!")
                 else:
                     with lock:
                         scanned_count += 1
                         if scanned_count % 50 == 0:  # Progress indicator every 50 ports
-                            print(f"  📊 Scanned {scanned_count}/{len(ports_to_scan)} ports...")
-            except Exception:
+                            print(f"  📊 Scanned {scanned_count}/{len(COMMON_PORTS)} ports...")
+            except:
                 with lock:
                     scanned_count += 1
 
@@ -496,7 +291,7 @@ def check_ports(ip, additional_ports=None):
     max_threads = 100  # Increased thread count
     threads = []
     
-    for i, port in enumerate(ports_to_scan):
+    for i, port in enumerate(COMMON_PORTS):
         thread = threading.Thread(target=scan_port, args=(port,))
         thread.daemon = True
         threads.append(thread)
@@ -513,7 +308,7 @@ def check_ports(ip, additional_ports=None):
         thread.join()
 
     print(f"\n{Y}[📊] Scan completed: {scanned_count} ports checked, {len(open_ports)} ports open{W}")
-    return sorted(open_ports), sorted(rtsp_ports)  # Return both open ports and RTSP ports
+    return sorted(open_ports)
 
 def check_if_camera(ip, open_ports):
     """Enhanced camera detection with detailed port analysis"""
@@ -598,7 +393,7 @@ def check_if_camera(ip, open_ports):
                     if endpoint_response.status_code in [200, 401, 403]:
                         print(f"    ✅ Camera Endpoint Found: {endpoint_url} (HTTP {endpoint_response.status_code})")
                         camera_indicators = True
-                except (requests.exceptions.RequestException, Exception):
+                except:
                     continue
             
             # Print server information
@@ -661,7 +456,7 @@ def check_login_pages(ip, open_ports):
                     found_urls.append(url)
                     print(f"  ✅ Found login page: {url} (HTTP {response.status_code})")
                 return url
-        except (requests.exceptions.RequestException, Exception):
+        except Exception as e:
             pass
         return None
 
@@ -691,270 +486,73 @@ def check_login_pages(ip, open_ports):
     else:
         print(f"  📊 Found {len(found_urls)} authentication pages")
 
-def test_rtsp_credentials(ip, port, username, password):
-    """Test RTSP credentials using RTSP OPTIONS request with Basic Auth"""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(2)
-            if s.connect_ex((ip, port)) != 0:
-                return False
-            
-            # RTSP OPTIONS request with Basic Auth
-            auth_string = base64.b64encode(f"{username}:{password}".encode()).decode()
-            request = (
-                f"OPTIONS rtsp://{ip}:{port}/ RTSP/1.0\r\n"
-                f"Authorization: Basic {auth_string}\r\n"
-                "CSeq: 1\r\n"
-                "\r\n"
-            ).encode("ascii", errors="ignore")
-            
-            s.sendall(request)
-            try:
-                data = s.recv(2048)
-            except socket.timeout:
-                return False
-            
-            if not data:
-                return False
-            
-            text = data.decode(errors="ignore")
-            # RTSP 200 OK means authentication succeeded
-            if "RTSP/1.0 200" in text or "RTSP/1.0 200 OK" in text:
-                return True
-            # RTSP 401 Unauthorized means wrong credentials
-            if "RTSP/1.0 401" in text:
-                return False
-    except Exception:
-        pass
-    return False
-
-def test_default_passwords(ip, open_ports, rtsp_ports=None):
+def test_default_passwords(ip, open_ports):
     print(f"\n[🔑] {C}Testing common credentials:{W}")
     found = False
     lock = threading.Lock()
-    start_time = time.time()
-    MAX_CREDENTIAL_TEST_TIME = 120  # Maximum 2 minutes total for credential testing
-    CREDENTIAL_TIMEOUT = 2  # Reduced timeout per request (2 seconds instead of 5)
     
-    if rtsp_ports is None:
-        rtsp_ports = []
-    
-    # Prioritized list of most common credentials (test these first)
-    # Format: (username, password)
-    PRIORITY_CREDENTIALS = [
-        ("admin", "admin"),
-        ("admin", "1234"),
-        ("admin", "12345"),
-        ("admin", "123456"),
-        ("admin", "password"),
-        ("admin", ""),  # Empty password
-        ("admin", "admin123"),
-        ("admin", "888888"),
-        ("admin", "666666"),
-        ("root", "root"),
-        ("root", "toor"),
-        ("root", "1234"),
-        ("admin", "1111"),
-        ("admin", "0000"),
-        ("admin", "8888"),
-        ("user", "user"),
-        ("guest", "guest"),
-    ]
-    
-    # Include RTSP ports (MOST IMPORTANT for CCTV!) and web ports
-    RTSP_PORTS_LIST = [554, 8554, 10554, 5554, 7070, 8555]  # Common RTSP ports
-    WEB_PORTS = [80, 443, 8080, 8443, 8000, 8001, 8008, 8081, 8082, 8888, 9000]
-    
-    # Prioritize RTSP ports - they're the most important for CCTV cameras!
-    ports_to_test = []
-    
-    # First add RTSP ports (detected + standard)
-    all_rtsp_ports = set(rtsp_ports) | set([p for p in open_ports if p in RTSP_PORTS_LIST])
-    ports_to_test.extend(sorted(all_rtsp_ports))
-    
-    # Then add web ports
-    web_ports = [p for p in open_ports if p in WEB_PORTS or (p < 10000 and p not in all_rtsp_ports)]
-    ports_to_test.extend(web_ports[:10])  # Limit web ports to first 10
-    
-    if not ports_to_test:
-        print(f"{Y}[ℹ️] No ports found for credential testing{W}")
-        return
-    
-    rtsp_count = len(all_rtsp_ports)
-    web_count = len(web_ports[:10])
-    print(f"{Y}[ℹ️] Testing credentials on {rtsp_count} RTSP port(s) + {web_count} web port(s)...{W}")
-    if rtsp_count > 0:
-        print(f"{C}[🎯] RTSP ports are prioritized (most important for CCTV cameras!){W}")
-    
-    tested_count = [0]  # Track number of credentials tested
-    
-    def test_http_credentials(protocol, port, path, auth_type, credentials_list):
-        """Test HTTP/HTTPS credentials"""
+    def test_credentials(protocol, port, path, auth_type):
         nonlocal found
-        if found:
-            return False
-        
-        if time.time() - start_time > MAX_CREDENTIAL_TEST_TIME:
+        if found:  # Early termination if credentials already found
             return False
             
         url = f"{protocol}://{ip}:{port}{path}"
-        for username, password in credentials_list:
-            if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
+        for username, passwords in DEFAULT_CREDENTIALS.items():
+            if found:  # Check again for early termination
                 return False
-            
-            with lock:
-                tested_count[0] += 1
-                if tested_count[0] % 20 == 0:
-                    elapsed = int(time.time() - start_time)
-                    print(f"  📊 Tested {tested_count[0]} credentials... ({elapsed}s elapsed)")
-            
-            try:
-                if auth_type == "basic":
-                    response = requests.get(url, auth=(username, password), 
-                                        headers=HEADERS, timeout=CREDENTIAL_TIMEOUT, verify=False)
-                elif auth_type == "form":
-                    response = requests.post(url, data={'username': username, 'password': password},
-                                            headers=HEADERS, timeout=CREDENTIAL_TIMEOUT, verify=False)
-                
-                if response.status_code == 200:
-                    with lock:
-                        if not found:
-                            found = True
-                            print(f"🔥 Success! {username}:{password} @ {url}")
-                    return True
-            except requests.exceptions.Timeout:
-                continue
-            except requests.exceptions.RequestException:
-                continue
-            except Exception:
-                pass
-        return False
-    
-    def test_rtsp_credentials_thread(port, credentials_list):
-        """Test RTSP credentials in a thread"""
-        nonlocal found
-        if found:
-            return False
-        
-        if time.time() - start_time > MAX_CREDENTIAL_TEST_TIME:
-            return False
-        
-        for username, password in credentials_list:
-            if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
-                return False
-            
-            with lock:
-                tested_count[0] += 1
-                if tested_count[0] % 20 == 0:
-                    elapsed = int(time.time() - start_time)
-                    print(f"  📊 Tested {tested_count[0]} credentials... ({elapsed}s elapsed)")
-            
-            if test_rtsp_credentials(ip, port, username, password):
-                with lock:
-                    if not found:
-                        found = True
-                        print(f"🔥 Success! RTSP {username}:{password} @ rtsp://{ip}:{port}/")
-                return True
+            for password in passwords:
+                if found:  # Check again for early termination
+                    return False
+                try:
+                    if auth_type == "basic":
+                        response = requests.get(url, auth=(username, password), 
+                                            headers=HEADERS, timeout=TIMEOUT, verify=False)
+                    elif auth_type == "form":
+                        response = requests.post(url, data={'username': username, 'password': password},
+                                                headers=HEADERS, timeout=TIMEOUT, verify=False)
+                    
+                    if response.status_code == 200:
+                        with lock:
+                            if not found:  # Double-check to avoid duplicate prints
+                                found = True
+                                print(f"🔥 Success! {username}:{password} @ {url}")
+                        return True
+                except:
+                    pass
         return False
 
     # Test endpoints with threading
     threads = []
-    max_concurrent = 30
-    THREAD_JOIN_TIMEOUT = 5
+    max_concurrent = 20  # Lower limit for credential testing
     
-    # PRIORITY 1: Test RTSP ports first (MOST IMPORTANT!)
-    for port in sorted(all_rtsp_ports):
-        if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
-            break
-        
-        # Test RTSP credentials
-        thread = threading.Thread(target=test_rtsp_credentials_thread, args=(port, PRIORITY_CREDENTIALS))
-        thread.daemon = True
-        threads.append(thread)
-        thread.start()
-        
-        if len(threads) >= max_concurrent:
-            for t in threads:
-                t.join(timeout=THREAD_JOIN_TIMEOUT)
-            threads = []
-    
-    # PRIORITY 2: Test HTTP/HTTPS credentials on web ports
-    endpoints = [
-        ("/", "basic"),  # Most common - HTTP Basic Auth
-        ("/login", "form"),  # Common login form
-    ]
-    
-    for port in web_ports[:10]:
-        if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
+    for port in open_ports:
+        if found:  # Early termination
             break
         protocol = get_protocol(port)
+        endpoints = [
+            ("/", "basic"),
+            ("/login", "form"),
+            ("/admin/login", "form"),
+            ("/cgi-bin/login", "form")
+        ]
         
         for path, auth_type in endpoints:
-            if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
+            if found:  # Early termination
                 break
-            
-            thread = threading.Thread(target=test_http_credentials, args=(protocol, port, path, auth_type, PRIORITY_CREDENTIALS))
+            thread = threading.Thread(target=test_credentials, args=(protocol, port, path, auth_type))
             thread.daemon = True
             threads.append(thread)
             thread.start()
             
+            # Limit concurrent threads
             if len(threads) >= max_concurrent:
                 for t in threads:
-                    t.join(timeout=THREAD_JOIN_TIMEOUT)
-                threads = []
-    
-    # Wait for priority credentials to finish
-    for thread in threads:
-        thread.join(timeout=THREAD_JOIN_TIMEOUT)
-    threads = []
-    
-    # If not found, test remaining credentials (but only if we have time)
-    if not found and (time.time() - start_time < MAX_CREDENTIAL_TEST_TIME * 0.7):
-        # Flatten all credentials for remaining tests
-        all_credentials = []
-        for username, passwords in DEFAULT_CREDENTIALS.items():
-            for password in passwords:
-                if (username, password) not in PRIORITY_CREDENTIALS:
-                    all_credentials.append((username, password))
-        
-        # Test remaining RTSP credentials
-        for port in sorted(all_rtsp_ports)[:3]:  # Only first 3 RTSP ports
-            if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
-                break
-            thread = threading.Thread(target=test_rtsp_credentials_thread, args=(port, all_credentials[:30]))
-            thread.daemon = True
-            threads.append(thread)
-            thread.start()
-            
-            if len(threads) >= max_concurrent:
-                for t in threads:
-                    t.join(timeout=THREAD_JOIN_TIMEOUT)
-                threads = []
-        
-        # Test remaining HTTP credentials on fewer ports
-        for port in web_ports[:3]:
-            if found or (time.time() - start_time > MAX_CREDENTIAL_TEST_TIME):
-                break
-            protocol = get_protocol(port)
-            thread = threading.Thread(target=test_http_credentials, args=(protocol, port, "/", "basic", all_credentials[:30]))
-            thread.daemon = True
-            threads.append(thread)
-            thread.start()
-            
-            if len(threads) >= max_concurrent:
-                for t in threads:
-                    t.join(timeout=THREAD_JOIN_TIMEOUT)
+                    t.join()
                 threads = []
     
     # Wait for remaining threads
     for thread in threads:
-        thread.join(timeout=THREAD_JOIN_TIMEOUT)
-    
-    elapsed_time = time.time() - start_time
-    if elapsed_time >= MAX_CREDENTIAL_TEST_TIME:
-        print(f"{Y}[⚠️] Credential testing stopped after {MAX_CREDENTIAL_TEST_TIME}s timeout{W}")
-    else:
-        print(f"{C}[✓] Tested {tested_count[0]} credentials in {int(elapsed_time)}s{W}")
+        thread.join()
     
     if not found:
         print("❌ No default credentials found")
@@ -973,7 +571,7 @@ def try_default_credentials(ip, port):
                 )
                 if response.status_code == 200:
                     return f"{username}:{password}"
-            except (requests.exceptions.RequestException, Exception):
+            except:
                 pass
     return None
 
@@ -1012,7 +610,7 @@ def fingerprint_camera(ip, open_ports):
             else:
                 print("❓ Unknown Camera Type")
                 fingerprint_generic(ip, port)
-        except (requests.exceptions.RequestException, Exception):
+        except:
             print("❌ No response")
 
 def fingerprint_hikvision(ip, port):
@@ -1161,7 +759,7 @@ def fingerprint_generic(ip, port):
                 if detected_brand:
                     search_cve(detected_brand)
                     break  # Continue checking other endpoints
-        except (requests.exceptions.RequestException, Exception):
+        except:
             pass
     if not detected_brand:
         print("❌ No common endpoints responded.")
@@ -1204,7 +802,7 @@ def check_stream(url):
                 content = response.text.lower()
                 if any(x in content for x in ['stream', 'video', 'live', 'camera', 'mjpg', 'mpeg']):
                     return True
-            except (UnicodeDecodeError, AttributeError):
+            except:
                 pass
         
         # Method 3: Check for specific camera stream patterns
@@ -1217,48 +815,10 @@ def check_stream(url):
         pass
     return False
 
-def detect_camera_brand(ip, open_ports):
-    """Detect camera brand from HTTP responses"""
-    detected_brands = set()
-    
-    # Brand indicators in URLs, content, or headers
-    brand_indicators = {
-        'axis': ['/view/index.shtml', '/axis-cgi/', 'axis', 'axis communications'],
-        'hikvision': ['hikvision', '/ISAPI/', '/Streaming/'],
-        'dahua': ['dahua', '/cgi-bin/magicBox.cgi'],
-        'sony': ['sony', 'ipela'],
-        'panasonic': ['panasonic', 'network camera'],
-    }
-    
-    for port in open_ports[:5]:  # Check first 5 ports
-        try:
-            protocol = get_protocol(port)
-            url = f"{protocol}://{ip}:{port}/"
-            response = requests.get(url, headers=HEADERS, timeout=2, verify=False)
-            
-            if response.status_code == 200:
-                content = response.text.lower()
-                url_lower = url.lower()
-                
-                # Check for brand indicators
-                for brand, indicators in brand_indicators.items():
-                    if any(ind in content or ind in url_lower for ind in indicators):
-                        detected_brands.add(brand)
-        except (requests.exceptions.RequestException, Exception):
-            continue
-    
-    return detected_brands
-
-def detect_live_streams(ip, open_ports, rtsp_ports=None):
+def detect_live_streams(ip, open_ports):
     """Enhanced live stream detection with better methods"""
     print(f"\n{C}[🎥] Checking for Live Streams:{W}")
     found_streams = False
-    
-    if rtsp_ports is None:
-        rtsp_ports = []
-    
-    # Detect camera brands that might support RTSP
-    detected_brands = detect_camera_brand(ip, open_ports)
     
     # Common streaming protocols and their default ports
     streaming_ports = {
@@ -1270,47 +830,6 @@ def detect_live_streams(ip, open_ports, rtsp_ports=None):
         'onvif': [3702, 80, 443],  # ONVIF discovery and streaming
         'vlc': [8080, 8090]  # VLC streaming ports
     }
-    
-    # FIRST: Show RTSP links for RTSP ports (detected + standard RTSP ports that are open)
-    # Combine detected RTSP ports with standard RTSP ports that are open
-    all_rtsp_ports = set(rtsp_ports) | set([p for p in open_ports if p in streaming_ports['rtsp']])
-    
-    # ALSO: For known camera brands that support RTSP, suggest RTSP URLs even if not detected
-    # Brands that commonly support RTSP: Axis, Hikvision, Dahua, Sony, Panasonic
-    rtsp_supporting_brands = {'axis', 'hikvision', 'dahua', 'sony', 'panasonic'}
-    if detected_brands & rtsp_supporting_brands and not all_rtsp_ports:
-        # Camera brand detected but no RTSP ports found - suggest RTSP on common ports
-        suggested_rtsp_ports = [554]  # Standard RTSP port
-        # Also suggest RTSP on HTTP ports if it's a known brand
-        for port in open_ports:
-            if port in [80, 443, 8000, 8080] and port not in all_rtsp_ports:
-                suggested_rtsp_ports.append(port)
-        
-        all_rtsp_ports = all_rtsp_ports | set(suggested_rtsp_ports)
-        if suggested_rtsp_ports:
-            brand_names = ', '.join([b.capitalize() for b in detected_brands & rtsp_supporting_brands])
-            print(f"\n{C}[🎯] {brand_names} Camera Detected - Suggesting RTSP URLs (RTSP may be available):{W}")
-    
-    if all_rtsp_ports:
-        found_streams = True  # Mark streams as found if RTSP ports detected
-        # Only show "RTSP Ports Found" header if not already shown for brand detection
-        if not (detected_brands & rtsp_supporting_brands and not rtsp_ports):
-            print(f"\n{C}[🎯] RTSP Ports Found - Potential RTSP URLs:{W}")
-        rtsp_ports_sorted = sorted(all_rtsp_ports)
-        for port in rtsp_ports_sorted:
-            # Show common RTSP paths
-            common_paths = ['/', '/live.sdp', '/h264.sdp', '/stream1', '/Streaming/Channels/1']
-            # Brand-specific paths
-            if 'axis' in detected_brands:
-                common_paths.extend(['/axis-media/media.amp', '/axis-media/media.amp?camera=1'])
-            if 'hikvision' in detected_brands:
-                common_paths.extend(['/Streaming/Channels/101', '/Streaming/Channels/1'])
-            
-            for path in common_paths[:5]:  # Limit to 5 paths per port
-                rtsp_url = f"rtsp://{ip}:{port}{path}"
-                print(f"  🎥 RTSP: {rtsp_url}")
-            print(f"     🎯 Use VLC (Media -> Open Network Stream) to test these RTSP URLs")
-        print()  # Empty line for readability
     
     # Enhanced stream paths for different camera brands
     stream_paths = {
@@ -1428,41 +947,23 @@ def detect_live_streams(ip, open_ports, rtsp_ports=None):
                 content_length = response.headers.get('Content-Length', '0')
                 
                 # Check if it's actually a stream/video
-                is_rtsp_rtmp_mms = any(x in url.lower() for x in ['rtsp://', 'rtmp://', 'mms://', 'rtp://'])
-                is_http_https = url.lower().startswith('http://') or url.lower().startswith('https://')
-                
-                # Check content type for video/stream indicators (including multipart streams)
-                is_stream_content = any(x in content_type for x in ['video', 'stream', 'mpeg', 'h264', 'mjpeg', 'image', 'multipart'])
-                
-                if is_stream_content:
+                if any(x in content_type for x in ['video', 'stream', 'mpeg', 'h264', 'mjpeg', 'image']):
                     print(f"  ✅ Stream Found: {url}")
                     print(f"     📺 Content-Type: {content_type}")
                     print(f"     📏 Content-Length: {content_length}")
-                    # Only suggest VLC for RTSP/RTMP/MMS streams
-                    if is_rtsp_rtmp_mms:
-                        print(f"     🎯 RTSP/RTMP Stream - Use VLC (Media -> Open Network Stream): {url}")
-                    elif is_http_https:
-                        print(f"     🌐 HTTP/HTTPS Stream - Open in browser: {url}")
                     return True
                 elif any(x in url.lower() for x in ['.mp4', '.m3u8', '.ts', '.flv', '.webm', '.avi', '.mov']):
                     print(f"  ✅ Video File: {url}")
                     print(f"     📺 Content-Type: {content_type}")
-                    if is_rtsp_rtmp_mms:
-                        print(f"     🎯 RTSP/RTMP Stream - Use VLC (Media -> Open Network Stream): {url}")
-                    elif is_http_https:
-                        print(f"     🌐 HTTP/HTTPS Video - Open in browser: {url}")
                     return True
-                elif is_rtsp_rtmp_mms:
+                elif any(x in url.lower() for x in ['rtsp://', 'rtmp://', 'mms://', 'rtp://']):
                     print(f"  ✅ Streaming URL: {url}")
-                    print(f"     🎯 RTSP/RTMP Stream - Use VLC (Media -> Open Network Stream): {url}")
                     return True
                 elif any(x in url.lower() for x in ['/video', '/stream', '/live', '/mjpg', '/snapshot']):
                     print(f"  ✅ Potential Stream: {url}")
                     print(f"     📺 Content-Type: {content_type}")
-                    if is_http_https:
-                        print(f"     🌐 HTTP/HTTPS Stream - Open in browser: {url}")
                     return True
-        except (requests.exceptions.RequestException, Exception):
+        except Exception as e:
             pass
         return False
     
@@ -1470,12 +971,9 @@ def detect_live_streams(ip, open_ports, rtsp_ports=None):
     threads = []
     max_concurrent = 30
     
-    # Check RTSP streams on ALL detected RTSP ports (including non-standard ports)
-    rtsp_ports_to_check = set(rtsp_ports) | set(streaming_ports['rtsp'])  # Combine detected RTSP ports with standard ones
-    
     for port in open_ports:
-        # Check RTSP streams on ALL RTSP-detected ports (not just standard port 554)
-        if port in rtsp_ports_to_check:
+        # Check RTSP streams
+        if port in streaming_ports['rtsp']:
             for path in stream_paths['rtsp']:
                 url = f"rtsp://{ip}:{port}{path}"
                 thread = threading.Thread(target=lambda u=url: check_stream_with_details(u) or None)
@@ -1548,45 +1046,23 @@ def detect_live_streams(ip, open_ports, rtsp_ports=None):
                     t.join()
                 threads = []
     
-    # Wait for remaining threads with timeout
+    # Wait for remaining threads
     for thread in threads:
-        thread.join(timeout=10)  # Add timeout to prevent hanging
-    
-    # Small delay to ensure all output is flushed
-    time.sleep(0.5)
+        thread.join()
     
     if not found_streams:
         print("  ❌ No live streams detected")
     else:
         print(f"  📊 Stream detection completed")
-        if all_rtsp_ports:
-            print(f"\n{C}[ℹ️] RTSP Streams Detected - To view RTSP/RTMP streams in VLC:{W}")
-            print("    1. Open VLC Media Player")
-            print("    2. Go to 'Media' -> 'Open Network Stream'")
-            print("    3. Paste the RTSP URL (e.g., rtsp://IP:PORT/) and click 'Play'")
-        
-        # Always show HTTP/HTTPS message if streams were found
-        print(f"\n{C}[ℹ️] HTTP/HTTPS streams can be opened directly in your web browser{W}")
-        print(f"     💡 Tip: Look above for HTTP/HTTPS stream URLs (e.g., http://IP:PORT/mjpg/video.mjpg)")
 
 def main():
     global threads_running
     try:
-        user_input = input(f"{G}[+] {C}Enter IP address (or IP:PORT): {W}").strip()
-        
-        # Parse IP:PORT format
-        target_ip, specified_port = parse_ip_port(user_input)
-        if target_ip is None:
-            return
-        
+        target_ip = input(f"{G}[+] {C}Enter IP address: {W}").strip()
         if not validate_ip(target_ip):
             return
         
         ip_obj = ipaddress.ip_address(target_ip)
-        
-        # If port is specified, inform user
-        if specified_port is not None:
-            print(f"{C}[ℹ️] Port {specified_port} specified - will prioritize scanning this port{W}")
 
         print(BANNER)
         print('____________________________________________________________________________\n')
@@ -1607,12 +1083,7 @@ def main():
             print(f"{C}[ℹ️] Proceeding directly to camera scanning...{W}")
 
         # Begin scanning
-        # If specific port provided, include it in the scan (even if not in COMMON_PORTS)
-        if specified_port is not None:
-            print(f"{C}[ℹ️] Port {specified_port} will be included in the scan{W}")
-            open_ports, rtsp_ports = check_ports(target_ip, additional_ports=[specified_port])
-        else:
-            open_ports, rtsp_ports = check_ports(target_ip)
+        open_ports = check_ports(target_ip)
 
         if open_ports:
             camera_found = check_if_camera(target_ip, open_ports)
@@ -1625,8 +1096,8 @@ def main():
 
             check_login_pages(target_ip, open_ports)
             fingerprint_camera(target_ip, open_ports)
-            test_default_passwords(target_ip, open_ports, rtsp_ports)
-            detect_live_streams(target_ip, open_ports, rtsp_ports)
+            test_default_passwords(target_ip, open_ports)
+            detect_live_streams(target_ip, open_ports)
 
         else:
             print("\n[❌] No open ports found. Likely no camera here.")
@@ -1639,4 +1110,5 @@ def main():
         sys.exit(1)
         
 if __name__ == "__main__":
+
     main()
