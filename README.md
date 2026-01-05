@@ -46,15 +46,6 @@ CamXploit is a reconnaissance tool designed to help researchers and security ent
 - **IP:PORT Format Support**: Accept IP:PORT format (e.g., `192.168.1.1:85`) to scan specific ports or ensure custom ports are checked
 - **Expanded Port Coverage**: Added common alternative ports (81-89, 21-23, 1024-1030, etc.) for better camera detection
 
-## 🆕 What's New in v2.0.1
-- Massive port scan: Now scans 1000+ ports, including custom and high camera ports
-- CP Plus (CP-UVR-0401E1-IC2) and DVR/NVR detection
-- Enhanced live stream detection (RTSP/HTTP/RTMP/MMS, with real stream validation)
-- Multi-threaded authentication and password brute-force (much faster)
-- Improved camera indicator analysis (brand, model, login forms, titles)
-- Comprehensive IP/location info with Google Maps/Earth links
-- Improved error handling and progress reporting
-
 ---
 
 ## 🚀 **Features**  
