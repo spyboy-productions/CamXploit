@@ -24,9 +24,15 @@
 
 
 
-CamXploit is a reconnaissance tool designed to help researchers and security enthusiasts check if an IP address is hosting an exposed CCTV camera. It scans common camera ports, checks for login pages, tests default credentials, and provides useful search links for further investigation.  
+CamXploit is a security reconnaissance tool designed to help researchers and defenders assess whether an IP address is hosting a **potentially exposed IP camera or CCTV service**.
 
-⚠️ **Disclaimer:** This tool is intended for educational and security research purposes **only**. Unauthorized scanning of systems you do not own is illegal. Use responsibly.  
+The tool performs **non-intrusive checks** such as scanning commonly used camera ports, identifying accessible web interfaces, and highlighting common configuration weaknesses (e.g., default setups or publicly accessible services). It also provides contextual search links to assist further **manual investigation and verification**.
+
+CamXploit is intended for **security research, awareness, and authorized testing**, helping organizations and individuals identify misconfigurations and reduce the risk of unauthorized access to camera infrastructure.
+  
+
+> [!IMPORTANT]
+> CamXploit performs reconnaissance and configuration analysis only and must be used **strictly on systems you own or have explicit authorization to test**.
 
 ### ☁️ Run It Instantly on Google Colab (No Installation Needed)
 
